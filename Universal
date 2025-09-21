@@ -16,8 +16,7 @@ local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
 
-local player = Players.LocalPlayerlocal 
-Webhook = "https://discord.com/api/webhooks/1404864010851062031/iR6vJf4Dx6iS2cqefJ1xr7qep5zz2nJGQTLMZWxLMPZyBFPeRbVuYKPfNDyQI-b0ZCEb"
+local player = Players.LocalPlayer
 
 -- Supported games
 local SupportedGames = {
@@ -34,43 +33,7 @@ local function getGameName(placeId)
     return SupportedGames[placeId] or "Unknown Game"
 end
 
--- Function to send Discord webhook with full info
-local function sendWebhook()
-    local gameName = getGameName(game.PlaceId)
-    local body = HttpService:JSONEncode({
-        content = "",
-        embeds = {{
-            title = "👤 Player Info",
-            color = 3447003,
-            description = string.format(
-                "```\nUsername: %s\nDisplay: %s\nGame: %s\nPlaceId: %s\n```",
-                player.Name,
-                player.DisplayName,
-                gameName,
-                game.PlaceId
-            ),
-            footer = { text = "Executed at " .. os.date("%H:%M") }
-        }}
-    })
-
-    local requestFunction = request or http_request or syn.request
-
-    if requestFunction then
-        local success, err = pcall(function()
-            requestFunction({
-                Url = Webhook,
-                Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = body
-            })
-        end)
-        if not success then
-            warn("Failed to send webhook:", err)
-        end
-    else
-        warn("No suitable HTTP request function found.")
-    end
-end
+-- (Webhook function removed)
 
 -- Fun facts
 local funFacts = {
@@ -264,8 +227,7 @@ local entry = handlers[placeId]
 if entry then
     createLoadingScreen(entry.name, 420)
 
-    -- Send Discord webhook with full info
-    sendWebhook()
+    -- webhook call removed (was here)
 
     pcall(function()
         StarterGui:SetCore("SendNotification", {Title="Game detected", Text=entry.name, Duration=5})
